@@ -47,6 +47,177 @@ def calcular_dupont(utilidad_neta, ventas, activos_promedio, patrimonio_promedio
         'patrimonio_promedio': patrimonio_promedio
     }
 
+def crear_prisma_3d_dupont(resultados):
+    """
+    Crea un prisma tridimensional que representa visualmente el modelo DuPont
+    basado en la imagen de referencia proporcionada
+    
+    Args:
+        resultados (dict): Resultados del cálculo DuPont con margen_neto, rotacion_activos, apalancamiento_financiero
+    
+    Returns:
+        plotly.graph_objects.Figure: Gráfico 3D del prisma DuPont
+    """
+    
+    # Normalizar valores para visualización (escala 0-1 para mejor visualización)
+    margen_normalizado = min(resultados['margen_neto'] * 5, 1.0)  # Escalar para mejor visualización
+    rotacion_normalizada = min(resultados['rotacion_activos'] / 3, 1.0)  # Normalizar rotación
+    apalancamiento_normalizado = min(resultados['apalancamiento_financiero'] / 4, 1.0)  # Normalizar apalancamiento
+    
+    # Crear prisma 3D según la imagen de referencia
+    # Base del prisma (rectángulo en el plano XY) - AZUL
+    base_x = [0, margen_normalizado, margen_normalizado, 0, 0]
+    base_y = [0, 0, rotacion_normalizada, rotacion_normalizada, 0]
+    base_z = [0, 0, 0, 0, 0]
+    
+    # Cara superior del prisma - ROJO (altura del apalancamiento)
+    superior_x = [0, margen_normalizado, margen_normalizado, 0, 0]
+    superior_y = [0, 0, rotacion_normalizada, rotacion_normalizada, 0]
+    superior_z = [apalancamiento_normalizado, apalancamiento_normalizado, apalancamiento_normalizado, 
+                  apalancamiento_normalizado, apalancamiento_normalizado]
+    
+    # Crear figura 3D
+    fig = go.Figure()
+    
+    # Crear una sola malla para todo el prisma con color uniforme
+    # Definir todos los vértices del prisma
+    vertices_x = [
+        0, margen_normalizado, margen_normalizado, 0,  # Base
+        0, margen_normalizado, margen_normalizado, 0   # Techo
+    ]
+    vertices_y = [
+        0, 0, rotacion_normalizada, rotacion_normalizada,  # Base
+        0, 0, rotacion_normalizada, rotacion_normalizada   # Techo
+    ]
+    vertices_z = [
+        0, 0, 0, 0,  # Base
+        apalancamiento_normalizado, apalancamiento_normalizado, apalancamiento_normalizado, apalancamiento_normalizado  # Techo
+    ]
+    
+    # Definir las caras del prisma
+    i = [0, 0, 0, 0, 4, 4, 4, 4, 0, 1, 2, 3]
+    j = [1, 1, 2, 3, 5, 5, 6, 7, 4, 5, 6, 7]
+    k = [2, 5, 3, 7, 6, 1, 7, 3, 1, 2, 3, 0]
+    
+    # Crear malla única con color celeste uniforme
+    fig.add_trace(go.Mesh3d(
+        x=vertices_x,
+        y=vertices_y,
+        z=vertices_z,
+        i=i,
+        j=j,
+        k=k,
+        facecolor=['lightcyan'] * 12,
+        opacity=0.4,
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    
+    # Añadir aristas para mejor definición
+    # Base
+    fig.add_trace(go.Scatter3d(
+        x=base_x, y=base_y, z=base_z,
+        mode='lines',
+        line=dict(color='darkblue', width=4),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    
+    # Superior
+    fig.add_trace(go.Scatter3d(
+        x=superior_x, y=superior_y, z=superior_z,
+        mode='lines',
+        line=dict(color='darkblue', width=4),
+        showlegend=False,
+        hoverinfo='skip'
+    ))
+    
+    # Aristas verticales
+    for i in range(4):
+        fig.add_trace(go.Scatter3d(
+            x=[base_x[i], superior_x[i]],
+            y=[base_y[i], superior_y[i]],
+            z=[base_z[i], superior_z[i]],
+            mode='lines',
+            line=dict(color='darkblue', width=2),
+            showlegend=False,
+            hoverinfo='skip'
+        ))
+    
+    # Configurar layout
+    fig.update_layout(
+        title=dict(
+            text=f"<b>Prisma DuPont 3D - ROE: {resultados['roe']:.2%}</b>",
+            x=0.5,
+            font=dict(size=16)
+        ),
+        scene=dict(
+            xaxis=dict(
+                title=dict(text='Margen Neto', font=dict(size=14, color='black')),
+                range=[0, 1],
+                showgrid=True,
+                gridcolor='lightgray',
+                showbackground=True,
+                backgroundcolor='rgba(240, 240, 240, 0.5)',
+                tickfont=dict(size=12, color='black'),
+                showticklabels=True
+            ),
+            yaxis=dict(
+                title=dict(text='Rotación de Activos', font=dict(size=14, color='black')),
+                range=[0, 1],
+                showgrid=True,
+                gridcolor='lightgray',
+                showbackground=True,
+                backgroundcolor='rgba(240, 240, 240, 0.5)',
+                tickfont=dict(size=12, color='black'),
+                showticklabels=True
+            ),
+            zaxis=dict(
+                title=dict(text='Apalancamiento Financiero', font=dict(size=14, color='black')),
+                range=[0, 1],
+                showgrid=True,
+                gridcolor='lightgray',
+                showbackground=True,
+                backgroundcolor='rgba(240, 240, 240, 0.5)',
+                tickfont=dict(size=12, color='black'),
+                showticklabels=True
+            ),
+            camera=dict(
+                eye=dict(x=1.2, y=1.2, z=0.8),
+                center=dict(x=0.5, y=0.5, z=0.3)
+            ),
+            bgcolor='white',
+            aspectmode='cube'
+        ),
+        width=800,
+        height=600,
+        margin=dict(l=0, r=0, t=40, b=0),
+        showlegend=True,
+        legend=dict(
+            x=0.02,
+            y=0.98,
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor='black',
+            borderwidth=1
+        )
+    )
+    
+    # Añadir anotación de ROE
+    fig.add_annotation(
+        x=0.5, y=0.5,
+        xref='paper', yref='paper',
+        text=f"<b>ROE = {resultados['roe']:.2%}</b><br>"
+             f"Volumen del Prisma",
+        showarrow=False,
+        font=dict(size=14, color='black'),
+        bgcolor="rgba(255,255,255,0.9)",
+        bordercolor="black",
+        borderwidth=2,
+        align="center"
+    )
+    
+    return fig
+
 def crear_metricas_dupont(resultados):
     """
     Crea visualización de métricas numéricas para los resultados DuPont
@@ -245,6 +416,32 @@ def main():
             label="Apalancamiento",
             value=f"{resultados['apalancamiento_financiero']:.2f}x"
         )
+    
+    # Visualización 3D del Prisma DuPont
+    st.header("🔮 Prisma DuPont 3D")
+    st.markdown("Visualización interactiva del modelo DuPont - El volumen del prisma representa el ROE")
+    
+    # Crear y mostrar el prisma 3D
+    fig_prisma = crear_prisma_3d_dupont(resultados)
+    st.plotly_chart(fig_prisma, use_container_width=True)
+    
+    # Explicación del prisma
+    with st.expander("📖 Interpretación del Prisma 3D"):
+        st.markdown("""
+        **El Prisma DuPont 3D** representa visualmente cómo los tres componentes se combinan para generar el ROE:
+        
+        - **Eje X (Margen Neto)**: Base del prisma en el eje horizontal. Mayor margen = base más larga.
+        - **Eje Y (Rotación de Activos)**: Profundidad del prisma. Mayor rotación = prisma más profundo.
+        - **Eje Z (Apalancamiento)**: Altura del prisma. Mayor apalancamiento = prisma más alto.
+        
+        **El volumen total del prisma representa el ROE**. Al modificar los sliders, verás cómo cambia la forma y volumen del prisma, 
+        permitiendo entender intuitivamente el impacto de cada componente en la rentabilidad final.
+        
+        **Interacción con el gráfico:**
+        - Haz clic y arrastra para rotar el prisma
+        - Usa la rueda del mouse para hacer zoom
+        - Pasa el cursor sobre los elementos para ver detalles
+        """)
 
 if __name__ == "__main__":
     main()
