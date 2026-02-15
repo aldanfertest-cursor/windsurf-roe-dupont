@@ -1,5 +1,8 @@
 """
-ROE DuPont Interactivo - Funcionalidad 1: Cálculo de ratios financieros básicos
+ROE DuPont Interactivo - Funcionalidades 1, 2 y 3: 
+- Funcionalidad 1: Cálculo de ratios financieros básicos
+- Funcionalidad 2: Prisma 3D modelo DuPont
+- Funcionalidad 3: Estados Financieros Simplificados
 Desarrollado con Streamlit, NumPy, Pandas y Plotly
 """
 
@@ -307,6 +310,191 @@ def crear_metricas_dupont(resultados):
     
     return fig
 
+def crear_estado_resultados(ventas, gastos, utilidad_neta):
+    """
+    Crea un gráfico de barras horizontales para el Estado de Resultados
+    según la imagen de referencia proporcionada
+    
+    Args:
+        ventas (float): Monto de ventas totales
+        gastos (float): Monto de gastos totales
+        utilidad_neta (float): Monto de utilidad neta
+    
+    Returns:
+        plotly.graph_objects.Figure: Gráfico de barras horizontales del Estado de Resultados
+    """
+    
+    # Crear figura
+    fig = go.Figure()
+    
+    # Datos para el gráfico según la imagen de referencia
+    # Ventas: barra hacia la izquierda (negativo) - alineada por derecha
+    fig.add_trace(go.Bar(
+        y=['Ventas'],
+        x=[-ventas],  # Negativo para alinear por derecha
+        orientation='h',
+        name='Ventas',
+        marker=dict(color='lightblue'),
+        text=[f'${ventas:,.0f}'],
+        textposition='outside',
+        hovertemplate='<b>Ventas</b><br>Monto: $%{abs(x):,.0f}<extra></extra>'
+    ))
+    
+    # Gastos: barra hacia la izquierda (negativo) - alineado por derecha
+    fig.add_trace(go.Bar(
+        y=['Gastos'],
+        x=[-gastos],  # Negativo para alinear por derecha
+        orientation='h',
+        name='Gastos',
+        marker=dict(color='lightpink'),
+        text=[f'${gastos:,.0f}'],
+        textposition='outside',
+        hovertemplate='<b>Gastos</b><br>Monto: $%{abs(x):,.0f}<extra></extra>'
+    ))
+    
+    # Utilidad Neta: barra hacia la izquierda (negativo) - alineada por izquierda con Ventas
+    fig.add_trace(go.Bar(
+        y=['Utilidad Neta'],
+        x=[-utilidad_neta],  # Negativo para alinear por izquierda con Ventas
+        orientation='h',
+        name='Utilidad Neta',
+        marker=dict(color='lightgreen'),
+        text=[f'${utilidad_neta:,.0f}'],
+        textposition='outside',
+        hovertemplate='<b>Utilidad Neta</b><br>Monto: $%{abs(x):,.0f}<extra></extra>'
+    ))
+    
+    # Configurar layout
+    fig.update_layout(
+        title=dict(
+            text="<b>Estado de Resultados</b>",
+            x=0.5,
+            font=dict(size=16)
+        ),
+        xaxis=dict(
+            title="Monto ($)",
+            showgrid=True,
+            gridcolor='lightgray',
+            zeroline=True,
+            zerolinecolor='black',
+            zerolinewidth=2,
+            tickformat=',.0f'
+        ),
+        yaxis=dict(
+            showgrid=False,
+            categoryorder='array',
+            categoryarray=['Ventas', 'Gastos', 'Utilidad Neta']
+        ),
+        height=400,
+        margin=dict(l=120, r=120, t=40, b=40),
+        showlegend=False,
+        barmode='relative'
+    )
+    
+    # Añadir línea vertical en el centro (punto cero)
+    fig.add_vline(x=0, line_dash="dash", line_color="black", line_width=2)
+    
+    # Añadir anotación de la fórmula
+    fig.add_annotation(
+        x=0.5, y=1.05,
+        xref='paper', yref='paper',
+        text="Ventas = Gastos + Utilidad Neta",
+        showarrow=False,
+        font=dict(size=12, color='gray'),
+        align="center"
+    )
+    
+    return fig
+
+def crear_balance_general(activos, deuda, patrimonio):
+    """
+    Crea un gráfico apilado para el Balance General
+    
+    Args:
+        activos (float): Monto total de activos
+        deuda (float): Monto total de deuda
+        patrimonio (float): Monto total de patrimonio
+    
+    Returns:
+        plotly.graph_objects.Figure: Gráfico apilado del Balance General
+    """
+    
+    # Crear figura
+    fig = go.Figure()
+    
+    # Lado izquierdo: Activos
+    fig.add_trace(go.Bar(
+        x=['Activos'],
+        y=[activos],
+        name='Activos',
+        marker=dict(color='lightgreen'),
+        text=[f'${activos:,.0f}'],
+        textposition='auto',
+        hovertemplate='<b>Activos</b><br>Monto: $%{y:,.0f}<extra></extra>'
+    ))
+    
+    # Lado derecho: Deuda y Patrimonio (apilados)
+    fig.add_trace(go.Bar(
+        x=['Pasivo + Patrimonio'],
+        y=[deuda],
+        name='Deuda',
+        marker=dict(color='lightpink'),
+        text=[f'${deuda:,.0f}'],
+        textposition='auto',
+        hovertemplate='<b>Deuda</b><br>Monto: $%{y:,.0f}<extra></extra>'
+    ))
+    
+    fig.add_trace(go.Bar(
+        x=['Pasivo + Patrimonio'],
+        y=[patrimonio],
+        name='Patrimonio',
+        marker=dict(color='lightblue'),
+        text=[f'${patrimonio:,.0f}'],
+        textposition='auto',
+        hovertemplate='<b>Patrimonio</b><br>Monto: $%{y:,.0f}<extra></extra>'
+    ))
+    
+    # Configurar layout
+    fig.update_layout(
+        title=dict(
+            text="<b>Balance General</b>",
+            x=0.5,
+            font=dict(size=16)
+        ),
+        yaxis=dict(
+            title="Monto ($)",
+            showgrid=True,
+            gridcolor='lightgray'
+        ),
+        xaxis=dict(
+            showgrid=False
+        ),
+        height=400,
+        margin=dict(l=80, r=80, t=40, b=40),
+        showlegend=True,
+        legend=dict(
+            x=0.5,
+            y=1.02,
+            orientation='h',
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor='black',
+            borderwidth=1
+        ),
+        barmode='stack'
+    )
+    
+    # Añadir anotación de la fórmula
+    fig.add_annotation(
+        x=0.5, y=1.05,
+        xref='paper', yref='paper',
+        text="Activos = Deuda + Patrimonio",
+        showarrow=False,
+        font=dict(size=12, color='gray'),
+        align="center"
+    )
+    
+    return fig
+
 def main():
     """
     Función principal de la aplicación Streamlit
@@ -364,6 +552,45 @@ def main():
         step=25000,
         help="Valor promedio del patrimonio neto"
     )
+    
+    st.sidebar.markdown("---")
+    st.sidebar.header("📊 Estados Financieros Simplificados")
+    st.sidebar.markdown("Ajuste los parámetros para los estados financieros:")
+    
+    # Sliders para Estados Financieros
+    gastos = st.sidebar.slider(
+        "Gastos ($)",
+        min_value=0,
+        max_value=4000000,
+        value=900000,
+        step=25000,
+        help="Gastos operativos totales"
+    )
+    
+    # Calcular automáticamente para mantener la lógica financiera
+    utilidad_calculada = max(0, ventas - gastos)
+    
+    # Ajustar utilidad_neta para que coincida con la lógica
+    utilidad_neta = utilidad_calculada
+    
+    st.sidebar.markdown(f"*Utilidad Neta calculada: ${utilidad_neta:,.0f}*")
+    
+    deuda = st.sidebar.slider(
+        "Deuda Total ($)",
+        min_value=0,
+        max_value=2000000,
+        value=400000,
+        step=25000,
+        help="Total de deudas y pasivos"
+    )
+    
+    # Calcular automáticamente para mantener el balance
+    patrimonio_balance = max(0, activos_promedio - deuda)
+    
+    st.sidebar.markdown(f"*Patrimonio calculado: ${patrimonio_balance:,.0f}*")
+    
+    # Usar el patrimonio calculado para consistencia
+    patrimonio_promedio = patrimonio_balance
     
     # Calcular resultados del modelo DuPont
     resultados = calcular_dupont(utilidad_neta, ventas, activos_promedio, patrimonio_promedio)
@@ -441,6 +668,67 @@ def main():
         - Haz clic y arrastra para rotar el prisma
         - Usa la rueda del mouse para hacer zoom
         - Pasa el cursor sobre los elementos para ver detalles
+        """)
+    
+    # Estados Financieros Simplificados - Funcionalidad 3
+    st.markdown("---")
+    st.header("📊 Estados Financieros Simplificados")
+    st.markdown("Visualización interactiva de los estados financieros básicos")
+    
+    # Crear dos columnas para los gráficos
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Estado de Resultados
+        st.markdown("### 📈 Estado de Resultados")
+        st.markdown("Ventas = Gastos + Utilidad Neta")
+        
+        fig_estado_resultados = crear_estado_resultados(ventas, gastos, utilidad_neta)
+        st.plotly_chart(fig_estado_resultados, use_container_width=True)
+        
+        # Métricas del Estado de Resultados
+        st.markdown("**Resumen Financiero:**")
+        st.markdown(f"- **Ventas:** ${ventas:,.0f}")
+        st.markdown(f"- **Gastos:** ${gastos:,.0f}")
+        st.markdown(f"- **Utilidad Neta:** ${utilidad_neta:,.0f}")
+        st.markdown(f"- **Margen Neto:** {(utilidad_neta/ventas)*100:.1f}%")
+    
+    with col2:
+        # Balance General
+        st.markdown("### 📋 Balance General")
+        st.markdown("Activos = Deuda + Patrimonio")
+        
+        fig_balance_general = crear_balance_general(activos_promedio, deuda, patrimonio_balance)
+        st.plotly_chart(fig_balance_general, use_container_width=True)
+        
+        # Métricas del Balance General
+        st.markdown("**Estructura del Balance:**")
+        st.markdown(f"- **Activos Totales:** ${activos_promedio:,.0f}")
+        st.markdown(f"- **Deuda Total:** ${deuda:,.0f}")
+        st.markdown(f"- **Patrimonio Neto:** ${patrimonio_balance:,.0f}")
+        st.markdown(f"- **Ratio Deuda/Patrimonio:** {(deuda/patrimonio_balance):.2f}x" if patrimonio_balance > 0 else "- **Ratio Deuda/Patrimonio:** N/A")
+    
+    # Explicación de los Estados Financieros
+    with st.expander("📖 Interpretación de los Estados Financieros"):
+        st.markdown("""
+        **Estados Financieros Simplificados** proporcionan una visión clara de la salud financiera:
+        
+        **Estado de Resultados:**
+        - Muestra la rentabilidad del período
+        - Las ventas se alinean a la derecha (salidas de efectivo)
+        - La utilidad neta se alinea a la izquierda (entrada neta)
+        - La fórmula fundamental: Ventas = Gastos + Utilidad Neta
+        
+        **Balance General:**
+        - Muestra la posición financiera en un momento específico
+        - Los activos (izquierda) deben igualar la suma de deuda + patrimonio (derecha)
+        - La fórmula fundamental: Activos = Deuda + Patrimonio
+        - Refleja cómo se financian los activos de la empresa
+        
+        **Relación con el ROE:**
+        - La utilidad neta del estado de resultados alimenta el cálculo del ROE
+        - La estructura del balance general afecta el apalancamiento financiero
+        - Ambos estados son fundamentales para el análisis DuPont completo
         """)
 
 if __name__ == "__main__":
